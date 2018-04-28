@@ -1,2 +1,2 @@
 # lhexec
-Linterhub Engine Executor
+Linterhub Executor Core Component
