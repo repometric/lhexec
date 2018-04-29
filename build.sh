@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 package_name="lhexec"
-dependencies=("github.com/urfave/cli")
+dependencies=("github.com/urfave/cli", "github.com/jinzhu/copier")
 platforms=("windows/amd64" "windows/386" "darwin/amd64" "darwin/386" "linux/386" "linux/amd64")
 
 for dependency in "${dependencies[@]}"
