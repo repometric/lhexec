@@ -14,7 +14,11 @@ func Run(context Context) (string, string) {
 	args := []string{}
 	for _, element := range context.Args {
 		if len(element.Key) > 0 {
-			args = append(args, fmt.Sprintf("%s=%s", element.Key, element.Value)) // TODO: parse delimeters for each engine
+			var delimeters = "="
+			if len(context.Delimeters) > 0 {
+				delimeters = context.Delimeters
+			}
+			args = append(args, fmt.Sprintf("%s%s%s", element.Key, delimeters, element.Value)) // TODO: parse delimeters for each engine
 		} else {
 			args = append(args, element.Value)
 		}
@@ -26,27 +30,39 @@ func Run(context Context) (string, string) {
 		dir, _ := os.Getwd()
 		cmd.Dir = dir
 	}
-	if len(context.Stdin) > 0 {
-		stdin, _ := cmd.StdinPipe()
-		defer stdin.Close()
-		io.WriteString(stdin, context.Stdin)
+
+	stdin, stdinErr := cmd.StdinPipe()
+	if stdinErr != nil {
+		return errorString(context.Binary, stdinErr.Error())
 	}
+
+	if len(context.Stdin) > 0 {
+		go func() {
+			defer stdin.Close()
+			io.WriteString(stdin, context.Stdin)
+		}()
+	}
+
 	var stderr, stdout bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 
 	if err := cmd.Start(); err != nil {
-		return "", context.Binary + " crashed with: " + err.Error()
+		return errorString(context.Binary, err.Error())
 	}
 
 	if err := cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			status, _ := exiterr.Sys().(syscall.WaitStatus)
 			if status.ExitStatus() != context.SuccessCode {
-				return "", context.Binary + " crashed with: " + err.Error()
+				return errorString(context.Binary, err.Error())
 			}
 		}
 	}
 
 	return string(stdout.Bytes()), string(stderr.Bytes())
+}
+
+func errorString(command string, err string) (string, string) {
+	return "", command + " crashed with: " + err
 }

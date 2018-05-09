@@ -1,26 +1,27 @@
 package analyze
 
+import "github.com/repometric/lhexec/models"
+
+//CLIContext - s
+type CLIContext struct {
+	Engine      string
+	Environment string
+	Project     string
+	File        string
+	Folder      string
+	Stdin       bool
+	Config      string
+}
+
 // Context struct describes all information for execution
 type Context struct {
-	Engine       []Engine
-	Project      string
-	File         string
-	Folder       string
-	Stdin        bool
-	StdinContent string
-	Ignores      []IgnoreRule
+	Engine  models.Engine
+	Project Project
+	Ignores []models.IgnoreRule
 }
 
-// Engine struct describes information for engine execution
-type Engine struct {
-	Name        string
-	Environment string
-	Args        map[string]string
-}
-
-// IgnoreRule struct describes ignore rules
-type IgnoreRule struct {
-	Mask   string
-	RuleID string
-	Line   int
+type Project struct {
+	Path   string
+	Folder string
+	File   string
 }

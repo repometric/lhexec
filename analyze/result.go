@@ -1,5 +1,6 @@
 package analyze
 
+//Result - result
 type Result struct {
 	// Engine name
 	Engine  string       `json:"name"`
@@ -7,6 +8,7 @@ type Result struct {
 	Errors  []PipeError  `json:"errors"`
 }
 
+//PipeError - error
 type PipeError struct {
 	// The description of the error
 	Message string `json:"message"`
