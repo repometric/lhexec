@@ -1,4 +1,4 @@
-package catalog
+package models
 
 // Extr structure describes extra engine data
 type Extr struct {
@@ -25,6 +25,8 @@ type PipelineChunk struct {
 
 	// Is the command-line option an engine executable name
 	Engine bool `json:"engine,omitempty"`
+
+	Args interface{} `json:"args,omitempty"`
 }
 
 // Environment struct stores execution information for engine

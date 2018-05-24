@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
-	"net/rpc"
 	"net/rpc/jsonrpc"
 	"os"
 
-	"github.com/repometric/lhexec/api"
+	"github.com/repometric/lhexec/analyze"
+	"github.com/repometric/lhexec/extensions"
 	"github.com/urfave/cli"
 )
 
@@ -52,54 +51,40 @@ func (r *rpcRequest) Call() io.Reader {
 	return r.rw
 }
 
-const appVersion = "0.0.2"
-const apiPort = ":1234"
+const (
+	appVersion = "0.0.3"
+	apiPort    = ":1234"
+)
 
 func main() {
 	app := cli.NewApp()
 	app.Version = appVersion
 	app.Usage = "Linterhub Engine Executor"
 	app.Commands = []cli.Command{
-		/*{
+		{
 			Name:    "analyze",
 			Aliases: []string{"a"},
 			Usage:   "Runs code analysis",
 			Action: func(c *cli.Context) error {
-				var context = analyze.Context{
+				var context = analyze.CLIContext{
 					Project:     c.String("project"),
 					File:        c.String("file"),
 					Folder:      c.String("folder"),
 					Environment: c.String("environment"),
-					Engine:      c.StringSlice("engine"),
+					Engine:      c.String("engine"),
 					Stdin:       c.Bool("stdin"),
+					Config:      c.String("config"),
 				}
 				if len(context.Engine) == 0 || len(context.Project) == 0 {
 					cli.ShowCommandHelp(c, "analyze")
 				} else {
-					var res []byte
-					if context.Stdin {
-						reader := bufio.NewReader(os.Stdin)
-						var output []rune
-
-						for {
-							input, _, err := reader.ReadRune()
-							if err != nil && err == io.EOF {
-								break
-							}
-							output = append(output, input)
-						}
-
-						context.StdinContent = string(output)
-					}
-
-					analyzeResult, _ = analyze.Run(context)
-					res, _ = json.MarshalIndent(analyzeResult, "", "    ")
-					fmt.Println(string(res))
+					analyzeResult := analyze.Run(context)
+					extensions.ConverObjectToJSON(analyzeResult, true)
 				}
 				return nil
 			},
 			Flags: []cli.Flag{
-				cli.StringSliceFlag{
+				cli.StringFlag{
 					Name:  "engine,e",
 					Usage: "List of the engines to be analyzed",
 				},
@@ -116,32 +101,38 @@ func main() {
 					Usage: "Relative path to the specific folder",
 				},
 				cli.StringFlag{
-					Name:  "environment,env",
-					Usage: "The way how to analyze (local by default)",
+					Name:   "environment,env",
+					Usage:  "The way how to analyze (local by default)",
+					EnvVar: "local, global, container",
+					Value:  "local",
+				},
+				cli.StringFlag{
+					Name:  "config,c",
+					Usage: "Path to file of configuration",
 				},
 				cli.BoolFlag{
 					Name:  "stdin",
 					Usage: "This argument says that standard input will be analyzed (false by default)",
 				},
 			},
-		},*/
-		{
-			Name:    "run",
-			Aliases: []string{"r"},
-			Usage:   "Runs jsonrpc service",
-			Action: func(c *cli.Context) error {
-				api := api.GetInstance()
-				rpc.Register(api)
-				http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-					defer req.Body.Close()
-					w.Header().Set("Content-Type", "application/json")
-					res := NewRPCRequest(req.Body).Call()
-					io.Copy(w, res)
-				})
-				log.Fatal(http.ListenAndServe(apiPort, nil))
-				return nil
-			},
 		},
+		// {
+		// 	Name:    "run",
+		// 	Aliases: []string{"r"},
+		// 	Usage:   "Runs jsonrpc service",
+		// 	Action: func(c *cli.Context) error {
+		// 		api := api.GetInstance()
+		// 		rpc.Register(api)
+		// 		http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		// 			defer req.Body.Close()
+		// 			w.Header().Set("Content-Type", "application/json")
+		// 			res := NewRPCRequest(req.Body).Call()
+		// 			io.Copy(w, res)
+		// 		})
+		// 		log.Fatal(http.ListenAndServe(apiPort, nil))
+		// 		return nil
+		// 	},
+		// },
 		{
 			Name:    "version",
 			Aliases: []string{"v"},

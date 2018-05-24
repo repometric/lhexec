@@ -7,6 +7,7 @@ type Context struct {
 	Args             []Argument
 	Stdin            string
 	SuccessCode      int
+	Delimeters       string
 }
 
 // Argument struct describes single argument

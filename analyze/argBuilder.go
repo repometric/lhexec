@@ -1,35 +1,35 @@
 package analyze
 
 import (
+	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/repometric/lhexec/catalog"
 	"github.com/repometric/lhexec/execute"
+	"github.com/repometric/lhexec/models"
+)
+
+var (
+	dir, _        = os.Getwd()
+	hubFolderPath = path.Join(dir, "hub")
 )
 
 // ArgBuilder methods create splice of arguments for engine execution
-func ArgBuilder(context Context, engine Engine, engineSpec catalog.Engine) []execute.Argument {
+func ArgBuilder(context Context, engine models.Engine, engineSpec catalog.Context) []execute.Argument {
 	var result []execute.Argument
 	for _, argument := range engineSpec.Args.Arguments {
 		if argument.Prefix == "linterhub" {
 			switch argument.ID {
 			case "path", "filename":
-				analyzePath := context.Folder
-				if len(context.File) > 0 {
-					analyzePath = path.Join(analyzePath, context.File)
+				analyzePath := context.Project.Folder
+				if len(context.Project.File) > 0 {
+					analyzePath = path.Join(analyzePath, context.Project.File)
 				}
 				result = append(result, execute.Argument{
 					Key:   argument.Name,
 					Value: analyzePath,
-				})
-				break
-			case "reporter":
-				dir, _ := os.Getwd()
-				reporterPath := path.Join(dir, "hub", engine.Name, argument.Value)
-				result = append(result, execute.Argument{
-					Key:   argument.Name,
-					Value: reporterPath,
 				})
 				break
 			}
@@ -54,6 +54,13 @@ func ArgBuilder(context Context, engine Engine, engineSpec catalog.Engine) []exe
 			}
 		}
 	}
+	return result
+}
+
+func replaceResrvedName(data interface{}, engineName string) string {
+	result := fmt.Sprintf("%v", data)
+	result = strings.Replace(result, "{{hub}}", hubFolderPath, -1)
+	result = strings.Replace(result, "{{engine}}", engineName, -1)
 
 	return result
 }

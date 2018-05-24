@@ -1,39 +1,34 @@
 package catalog
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/repometric/lhexec/extensions"
+	"github.com/repometric/lhexec/models"
 )
 
-const hubFolder = "hub"
+var (
+	dir, _        = os.Getwd()
+	hubFolderName = "hub"
+	argsFileName  = "args.json"
+	pipeFileName  = "pipe.json"
+)
 
 // Get function creates instance of engine
-func Get(engine string) *Engine {
-	var result Engine
+func Get(engine string) *Context {
+	var (
+		context        = Context{}
+		engineArgsFile = models.Args{}
+		engineFolder   = path.Join(dir, hubFolderName, engine)
+	)
 
-	argsFile, e := ioutil.ReadFile(path.Join(hubFolder, engine, "args.json"))
-	if e != nil {
-		fmt.Printf("Catch error while reading args file: %v\n", e)
-		os.Exit(1)
-	}
+	extensions.GetObjectInFile(path.Join(engineFolder, argsFileName), &engineArgsFile)
 
-	extrFile, e := ioutil.ReadFile(path.Join(hubFolder, engine, "extr.json"))
-	if e != nil {
-		fmt.Printf("Catch error while reading extr file: %v\n", e)
-		os.Exit(1)
-	}
+	arguments := make([]Argument, 0, len(engineArgsFile.Definitions.Arguments.Properties))
 
-	var args argsParsed
-
-	json.Unmarshal(argsFile, &(args))
-
-	v := make([]Argument, 0, len(args.Definitions.Arguments.Properties))
-
-	for key, value := range args.Definitions.Arguments.Properties {
+	for key, value := range engineArgsFile.Definitions.Arguments.Properties {
 		argument := Argument{
 			ID:          value.ID,
 			Name:        key,
@@ -46,16 +41,16 @@ func Get(engine string) *Engine {
 			argument.Prefix = splited[0]
 			argument.ID = splited[1]
 		}
-		v = append(v, argument)
+		arguments = append(arguments, argument)
 	}
 
-	result.Args = Args{
-		ID:        args.ID,
-		Name:      args.Name,
-		Arguments: v,
+	context.Args = Args{
+		ID:         engineArgsFile.ID,
+		Name:       engineArgsFile.Name,
+		Arguments:  arguments,
+		Delimeters: engineArgsFile.Delimeters,
 	}
 
-	json.Unmarshal(extrFile, &(result.Extr))
-
-	return &result
+	extensions.GetObjectInFile(path.Join(engineFolder, pipeFileName), &(context.Extr))
+	return &context
 }
